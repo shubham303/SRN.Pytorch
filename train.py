@@ -82,7 +82,7 @@ class Trainer(object):
 
 if __name__=='__main__':
     args = get_args(sys.argv[1:])
-    output_type ={'LOWERCASE':38,'ALLCASES':64,'ALLCASES_SYMBOLS':96}
+    output_type ={'LOWERCASE':137,'ALLCASES':64,'ALLCASES_SYMBOLS':96}
     ocr_model = SRNModel(args.in_channels,output_type[args.voc_type],args.max_len,args.num_heads,args.pvam_layer,args.gsrm_layer,args.hidden_dims)
     if args.reuse_model != '':
         ocr_model.load_state_dict(torch.load(args.reuse_model))

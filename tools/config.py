@@ -33,8 +33,7 @@ parser.add_argument('--workers', type=int, default=2)
 
 #model config
 parser.add_argument('--in_channels',type=int,default=512,help='the srn_head input channel is same as the backbone output')
-parser.add_argument('--out_channels',type=int,default=38,help='the output logits dimension')
-# parser.add_argument('--max_len',type=int,default=25,help='the pvam decode steps')
+parser.add_argument('--out_channels',type=int,default=137,help='the output logits dimension')
 parser.add_argument('--num_heads',type=int,default=8,help='the Multihead attention head nums')
 parser.add_argument('--pvam_layer',type=int,default=2,help='the pvam default layers')
 parser.add_argument('--gsrm_layer',type=int,default=4,help='the gsrm default layers')

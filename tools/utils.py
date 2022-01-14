@@ -5,6 +5,7 @@ import string
 import warnings
 import cv2
 import lmdb
+import numpy
 import numpy as np
 import six
 import torch
@@ -23,11 +24,7 @@ def get_vocabulary(voc_type, EOS='EOS', PADDING='PADDING'):
   voc = None
   types = ['LOWERCASE', 'ALLCASES', 'ALLCASES_SYMBOLS']
   if voc_type == 'LOWERCASE':
-    voc = list(string.digits + string.ascii_lowercase)
-  elif voc_type == 'ALLCASES':
-    voc = list(string.digits + string.ascii_letters)
-  elif voc_type == 'ALLCASES_SYMBOLS':
-    voc = list(string.printable[:-6])
+    voc = list("ऀँंःऄअआइईउऊऋऌऍऎएऐऑऒओऔकखगघङचछजझञटठडढणतथदधनऩपफबभमयरऱलळऴवशषसहऺऻ़ऽािीुूृॄॅॆेैॉॊोौ्ॎॏॐ॒॑॓॔ॕॖॗक़ख़ग़ज़ड़ढ़फ़य़ॠॡॢॣ।॥०१२३४५६७८९॰ॱॲॳॴॵॶॷॸॹॺॻॼॽॾॿ%/?:,.-")
   else:
     raise KeyError('voc_type must be one of "LOWERCASE", "ALLCASES", "ALLCASES_SYMBOLS"')
 
@@ -42,7 +39,7 @@ class LmdbDataset(data.Dataset):
   def __init__(self, root, voc_type, max_len, num_samples,is_train=True,transform=None):
     super(LmdbDataset, self).__init__()
     
-    self.env = lmdb.open(root, max_readers=32, readonly=True)
+    self.env = lmdb.open(root, max_readers=32, readonly=True,lock=False )
 
     assert self.env is not None, "cannot create lmdb from %s" % root
     self.txn = self.env.begin()
@@ -170,8 +167,8 @@ class AlignCollate(object):
 
   def __call__(self, batch):
     images, labels, lengths = zip(*batch)
-    b_lengths = torch.IntTensor(lengths)
-    b_labels = torch.LongTensor(labels)
+    b_lengths = torch.IntTensor(numpy.array(lengths))
+    b_labels = torch.LongTensor(numpy.array(labels))
 
     imgH = self.imgH
     imgW = self.imgW
@@ -343,7 +340,7 @@ def test():
 
 if __name__=='__main__':
   #test()
-  a = get_vocabulary('ALLCASES_SYMBOLS')
+  a = get_vocabulary('LOWERCASE')
   print(len(a))
 
 
