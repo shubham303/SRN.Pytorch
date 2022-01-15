@@ -27,7 +27,7 @@ class Trainer(object):
         if begin_res > self.best_acc:
             self.best_acc = begin_res
 
-    def train(self, train_dataloader, optimizer, epoch, evaluator):
+    def train(self, train_dataloader, optimizer, epoch, evaluator, wandb):
         self.model.train()
         losses = AverageMeter()
         pvam_loss = AverageMeter()
@@ -63,6 +63,12 @@ class Trainer(object):
                       'Vsfd_Loss:{:.3f}({:.3f})\t'.format(epoch, i + 1, len(train_dataloader), losses.val, losses.avg,
                                                           pvam_loss.val, pvam_loss.avg,
                                                           vsfd_loss.val, vsfd_loss.avg))
+
+                wandb.log(
+                    {'Loss': losses.val, "loss_avg":losses.avg,
+                     'pvam_Loss': pvam_loss.val, "pvam_loss_avg": pvam_loss.avg,
+                     'Vsfd_Loss': vsfd_loss.val, "Vsfd_Loss_avg": vsfd_loss.avg,})
+
                 gt_str, pred_str = evaluator.decode(gt, pred)
                 print('gt:\t', gt_str)
                 print('pred:\t', pred_str)
@@ -70,19 +76,24 @@ class Trainer(object):
                 eval_res = evaluator.eval(self.test_dataloader)
                 print('Epoch:[{}][{}/{}]\t'
                       'acc:{:.3f}\t'.format(epoch, i + 1, len(train_dataloader), eval_res))
+                
+                wandb.log(
+                    {'test_accuracy': eval_res})
+                
                 if eval_res > self.best_acc:
                     self.model.train()
                     torch.save(self.model.state_dict(), './ckpt/SRN_best.pth')
                     self.best_acc = eval_res
+                    
                 with open('eval_res.txt', 'a', encoding='utf-8') as f_w:
                     f_w.write(str(eval_res) + '\n')
 
-            if self.iters % 50000 == 0:
+            if self.iters % 20000 == 0:
                 torch.save(self.model.state_dict(), os.path.join('./ckpt/', f'SRN_{epoch}_{self.iters}.pth'))
 
 if __name__=='__main__':
     args = get_args(sys.argv[1:])
-    output_type ={'LOWERCASE':137,'ALLCASES':64,'ALLCASES_SYMBOLS':96}
+    output_type ={'LOWERCASE':130,'ALLCASES':64,'ALLCASES_SYMBOLS':96}
     ocr_model = SRNModel(args.in_channels,output_type[args.voc_type],args.max_len,args.num_heads,args.pvam_layer,args.gsrm_layer,args.hidden_dims)
     if args.reuse_model != '':
         ocr_model.load_state_dict(torch.load(args.reuse_model))
@@ -95,5 +106,10 @@ if __name__=='__main__':
                                              keep_ratio=args.keep_ratio)
     evaluator = Eval(ocr_model, 'acc', True,args.voc_type)
     trainer = Trainer(ocr_model, test_dataloader, evaluator, args.reuse_model)
+    import wandb
+    wandb.init(project="SRN", entity="cs20m064")
+
     for epoch in range(args.epoches):
-        trainer.train(train_dataloader, optimizer, epoch, evaluator)
+        trainer.train(train_dataloader, optimizer, epoch, evaluator, wandb)
+
+    wandb.finish()
